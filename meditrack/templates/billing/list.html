@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+{% block title %}Billing{% endblock %}
+{% block page_title %}Billing{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h3><i class="fa-solid fa-file-invoice-dollar text-primary me-2"></i>Billing</h3>
+        <p class="text-muted mb-0">All generated invoices</p>
+    </div>
+    <a href="{% url 'core:bill_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Create Bill</a>
+</div>
+
+<div class="card shadow-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" id="liveSearch" value="{{ query }}" class="form-control" placeholder="Search by bill number or customer...">
+                </div>
+            </div>
+            <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Search</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="medicineTable">
+                <thead>
+                    <tr><th>Bill No.</th><th>Customer</th><th>Date</th><th>Payment</th><th>Status</th><th>Grand Total</th><th class="text-end">Actions</th></tr>
+                </thead>
+                <tbody>
+                {% for bill in page_obj %}
+                    <tr>
+                        <td>{{ bill.bill_number }}</td>
+                        <td>{{ bill.customer.name|default:"Walk-in Customer" }}</td>
+                        <td>{{ bill.created_at|date:"d M Y, h:i A" }}</td>
+                        <td class="text-capitalize">{{ bill.payment_method }}</td>
+                        <td>
+                            {% if bill.payment_status == 'paid' %}<span class="badge bg-success">Paid</span>
+                            {% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}
+                        </td>
+                        <td class="fw-semibold">{{ bill.grand_total|rupee }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'core:bill_invoice' bill.pk %}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-eye"></i> View</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-5">No bills generated yet. <a href="{% url 'core:bill_create' %}">Create the first bill</a>.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% include 'partials/pagination.html' %}
+{% endblock %}

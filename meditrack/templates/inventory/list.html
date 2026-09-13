@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+{% block title %}Inventory{% endblock %}
+{% block page_title %}Inventory Management{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h3><i class="fa-solid fa-boxes-stacked text-primary me-2"></i>Inventory Management</h3>
+    <p class="text-muted mb-0">Real-time stock levels across all medicines</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card border-start-success"><div class="card-body">
+            <h6 class="text-muted mb-1">In Stock</h6><h3 class="mb-0">{{ in_stock_count }}</h3>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start-warning"><div class="card-body">
+            <h6 class="text-muted mb-1">Low Stock</h6><h3 class="mb-0">{{ low_stock_count }}</h3>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start-danger"><div class="card-body">
+            <h6 class="text-muted mb-1">Out of Stock</h6><h3 class="mb-0">{{ out_of_stock_count }}</h3>
+        </div></div>
+    </div>
+</div>
+
+<div class="card shadow-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" id="liveSearch" value="{{ query }}" class="form-control" placeholder="Search medicine name or code...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Stock Status</option>
+                    <option value="in_stock" {% if status == 'in_stock' %}selected{% endif %}>In Stock</option>
+                    <option value="low_stock" {% if status == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                    <option value="out_of_stock" {% if status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100"><i class="fa-solid fa-filter me-1"></i>Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="medicineTable">
+                <thead>
+                    <tr>
+                        <th>Medicine</th><th>Rack</th><th>Current Stock</th><th>Min. Stock</th>
+                        <th>Stock Status</th><th>Expiry Status</th><th>Stock Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for medicine in page_obj %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'core:medicine_detail' medicine.pk %}" class="fw-semibold text-decoration-none">{{ medicine.name }}</a>
+                            <div class="small text-muted">{{ medicine.code }}</div>
+                        </td>
+                        <td>{{ medicine.rack_number|default:"—" }}</td>
+                        <td>{{ medicine.quantity }}</td>
+                        <td>{{ medicine.minimum_stock }}</td>
+                        <td><span class="badge {{ medicine.stock_badge_class }}">{{ medicine.stock_status_label }}</span></td>
+                        <td><span class="badge {{ medicine.expiry_badge_class }}">{{ medicine.expiry_status_label }}</span></td>
+                        <td>{{ medicine.quantity|mul:medicine.purchase_price|rupee }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-5">No inventory records found.</td></tr>
+                {% endfor %}
+                </tbody>
+                {% if page_obj %}
+                <tfoot>
+                    <tr class="table-light fw-semibold">
+                        <td colspan="6" class="text-end">Total Stock Value (this page)</td>
+                        <td>{{ total_stock_value|rupee }}</td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>
+
+{% include 'partials/pagination.html' %}
+{% endblock %}

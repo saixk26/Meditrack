@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+{% block title %}Medicines{% endblock %}
+{% block page_title %}Medicine Management{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h3><i class="fa-solid fa-pills text-primary me-2"></i>Medicine Management</h3>
+        <p class="text-muted mb-0">Manage your complete medicine catalog</p>
+    </div>
+    <a href="{% url 'core:medicine_add' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Add Medicine</a>
+</div>
+
+<div class="card shadow-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" id="liveSearch" value="{{ query }}" class="form-control" placeholder="Search by name, code, batch, manufacturer...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category_id }}" {% if category_id == cat.category_id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="stock_status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Stock</option>
+                    <option value="in_stock" {% if stock_status == 'in_stock' %}selected{% endif %}>In Stock</option>
+                    <option value="low_stock" {% if stock_status == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                    <option value="out_of_stock" {% if stock_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="expiry_status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Expiry</option>
+                    <option value="expired" {% if expiry_status == 'expired' %}selected{% endif %}>Expired</option>
+                    <option value="expiring_week" {% if expiry_status == 'expiring_week' %}selected{% endif %}>Expiring This Week</option>
+                    <option value="expiring_month" {% if expiry_status == 'expiring_month' %}selected{% endif %}>Expiring This Month</option>
+                    <option value="safe" {% if expiry_status == 'safe' %}selected{% endif %}>Safe</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-outline-primary w-100"><i class="fa-solid fa-filter"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="medicineTable">
+                <thead>
+                    <tr>
+                        <th>Medicine</th><th>Code</th><th>Category</th><th>Batch</th>
+                        <th>Expiry Date</th><th>Expiry Status</th><th>Stock</th><th>Price</th><th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for medicine in page_obj %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if medicine.image %}
+                                <img src="{{ medicine.image.url }}" class="med-thumb" alt="{{ medicine.name }}">
+                                {% else %}
+                                <div class="med-thumb med-thumb-placeholder"><i class="fa-solid fa-pills"></i></div>
+                                {% endif %}
+                                <div>
+                                    <a href="{% url 'core:medicine_detail' medicine.pk %}" class="fw-semibold text-decoration-none">{{ medicine.name }}</a>
+                                    <div class="small text-muted">{{ medicine.manufacturer }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ medicine.code }}</td>
+                        <td>{{ medicine.category.name|default:"—" }}</td>
+                        <td>{{ medicine.batch_number }}</td>
+                        <td>{{ medicine.expiry_date|date:"d M Y" }}</td>
+                        <td><span class="badge {{ medicine.expiry_badge_class }}">{{ medicine.expiry_status_label }}</span></td>
+                        <td><span class="badge {{ medicine.stock_badge_class }}">{{ medicine.quantity }} - {{ medicine.stock_status_label }}</span></td>
+                        <td>{{ medicine.selling_price|rupee }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'core:medicine_detail' medicine.pk %}" class="btn btn-sm btn-outline-secondary" title="View"><i class="fa-solid fa-eye"></i></a>
+                            <a href="{% url 'core:medicine_edit' medicine.pk %}" class="btn btn-sm btn-outline-primary" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-confirm"
+                                    data-form="delete-form-{{ medicine.pk }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            <form id="delete-form-{{ medicine.pk }}" action="{% url 'core:medicine_delete' medicine.pk %}" method="post" class="d-none">
+                                {% csrf_token %}
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="9" class="text-center text-muted py-5">No medicines found. <a href="{% url 'core:medicine_add' %}">Add your first medicine</a>.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% include 'partials/pagination.html' %}
+
+{% endblock %}

@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MediTrack{% endblock %} | MediTrack</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="app-wrapper">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-suitcase-medical"></i>
+            <span class="brand-text">MediTrack</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'core:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+            </a>
+            <a href="{% url 'core:medicine_list' %}" class="nav-link {% if 'medicine' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-pills"></i><span>Medicines</span>
+            </a>
+            <a href="{% url 'core:inventory_list' %}" class="nav-link {% if request.resolver_match.url_name == 'inventory_list' %}active{% endif %}">
+                <i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span>
+            </a>
+            <a href="{% url 'core:expiry_center' %}" class="nav-link {% if request.resolver_match.url_name == 'expiry_center' %}active{% endif %}">
+                <i class="fa-solid fa-triangle-exclamation"></i><span>Expiry Alert Center</span>
+                {% if nb_total_alerts %}<span class="badge rounded-pill bg-danger ms-auto">{{ nb_total_alerts }}</span>{% endif %}
+            </a>
+            <a href="{% url 'core:customer_list' %}" class="nav-link {% if 'customer' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-users"></i><span>Customers</span>
+            </a>
+            <a href="{% url 'core:supplier_list' %}" class="nav-link {% if 'supplier' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-truck-field"></i><span>Suppliers</span>
+            </a>
+            <a href="{% url 'core:bill_list' %}" class="nav-link {% if 'bill' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fa-solid fa-file-invoice-dollar"></i><span>Billing</span>
+            </a>
+            <a href="{% url 'accounts:settings' %}" class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                <i class="fa-solid fa-gear"></i><span>Settings</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{% url 'accounts:logout' %}" class="nav-link text-danger">
+                <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+        <!-- TOP NAVBAR -->
+        <header class="topbar">
+            <button id="sidebarToggle" class="btn btn-toggle" type="button">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="topbar-title d-none d-md-block">{% block page_title %}{% endblock %}</div>
+
+            <div class="topbar-right ms-auto d-flex align-items-center gap-3">
+                <div class="dropdown">
+                    <button class="btn btn-notify position-relative" type="button" data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-bell"></i>
+                        {% if nb_total_alerts %}
+                        <span class="notify-dot">{{ nb_total_alerts }}</span>
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end notify-dropdown">
+                        <li><h6 class="dropdown-header">Notifications</h6></li>
+                        {% for item in notification_items %}
+                        <li><a class="dropdown-item" href="{{ item.url }}"><i class="fa-solid {{ item.icon }} me-2"></i>{{ item.text }}</a></li>
+                        {% empty %}
+                        <li><span class="dropdown-item-text text-muted">No new alerts. All good! ✅</span></li>
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center small" href="{% url 'core:expiry_center' %}">View Expiry Alert Center</a></li>
+                    </ul>
+                </div>
+
+                <div class="dropdown">
+                    <button class="btn btn-user d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                        <div class="avatar-circle">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</div>
+                        <span class="d-none d-md-inline">{{ request.user.first_name|default:request.user.username }}</span>
+                        <i class="fa-solid fa-chevron-down small"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'accounts:settings' %}"><i class="fa-solid fa-user me-2"></i>Profile & Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i class="fa-solid fa-right-from-bracket me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- TOASTS -->
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+            {% for message in messages %}
+            <div class="toast align-items-center text-bg-{{ message.tags }} border-0 show mb-2" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'danger' %}fa-circle-xmark{% elif message.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %} me-2"></i>
+                        {{ message }}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <main class="page-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/script.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

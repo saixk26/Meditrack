@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+{% block title %}Expiry Alert Center{% endblock %}
+{% block page_title %}Smart Medicine Expiry Alert Center{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h3><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Smart Medicine Expiry Alert Center</h3>
+    <p class="text-muted mb-0">Medicine expiry status is calculated live from today's date - nothing is stored.</p>
+</div>
+
+<!-- ALERT CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+        <a href="?status=expired" class="alert-card alert-card-danger {% if status == 'expired' %}active{% endif %}">
+            <i class="fa-solid fa-skull-crossbones"></i>
+            <h4>{{ counts.expired }}</h4><span>Expired</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <a href="?status=expiring_today" class="alert-card alert-card-danger {% if status == 'expiring_today' %}active{% endif %}">
+            <i class="fa-solid fa-hourglass-end"></i>
+            <h4>{{ counts.expiring_today }}</h4><span>Expiring Today</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <a href="?status=expiring_tomorrow" class="alert-card alert-card-warning {% if status == 'expiring_tomorrow' %}active{% endif %}">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <h4>{{ counts.expiring_tomorrow }}</h4><span>Expiring Tomorrow</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <a href="?status=expiring_week" class="alert-card alert-card-warning {% if status == 'expiring_week' %}active{% endif %}">
+            <i class="fa-solid fa-calendar-week"></i>
+            <h4>{{ counts.expiring_week }}</h4><span>Within 7 Days</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <a href="?status=expiring_month" class="alert-card alert-card-info {% if status == 'expiring_month' %}active{% endif %}">
+            <i class="fa-solid fa-calendar-days"></i>
+            <h4>{{ counts.expiring_month }}</h4><span>Within 30 Days</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <a href="?status=safe" class="alert-card alert-card-success {% if status == 'safe' %}active{% endif %}">
+            <i class="fa-solid fa-shield-heart"></i>
+            <h4>{{ counts.safe }}</h4><span>Safe</span>
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" id="liveSearch" value="{{ query }}" class="form-control" placeholder="Search medicine name, code or batch...">
+                </div>
+            </div>
+            <input type="hidden" name="status" value="{{ status }}">
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-fill"><i class="fa-solid fa-filter me-1"></i>Search</button>
+                {% if status or query %}<a href="{% url 'core:expiry_center' %}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3" id="medicineTable">
+{% for medicine in page_obj %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card notification-card border-0 shadow-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">{{ medicine.name }}</h6>
+                        <div class="small text-muted">{{ medicine.code }} • Batch {{ medicine.batch_number }}</div>
+                    </div>
+                    <span class="badge {{ medicine.expiry_badge_class }}">{{ medicine.expiry_status_label }}</span>
+                </div>
+                <hr>
+                <div class="small mb-1"><i class="fa-solid fa-calendar-day me-1 text-muted"></i> Expiry Date: <strong>{{ medicine.expiry_date|date:"d M Y" }}</strong></div>
+                <div class="small mb-1">
+                    {% if medicine.days_to_expiry >= 0 %}
+                        <i class="fa-solid fa-hourglass-half me-1 text-muted"></i> {{ medicine.days_to_expiry }} day(s) remaining
+                    {% else %}
+                        <i class="fa-solid fa-circle-exclamation me-1 text-danger"></i> Expired {{ medicine.days_to_expiry|cut:"-" }} day(s) ago
+                    {% endif %}
+                </div>
+                <div class="small mb-2"><i class="fa-solid fa-box me-1 text-muted"></i> Stock: <span class="badge {{ medicine.stock_badge_class }}">{{ medicine.quantity }}</span></div>
+                <a href="{% url 'core:medicine_detail' medicine.pk %}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <div class="col-12">
+        <div class="card shadow-card"><div class="card-body text-center text-muted py-5">
+            <i class="fa-solid fa-circle-check fa-2x text-success mb-2"></i><br>
+            No medicines found matching this filter.
+        </div></div>
+    </div>
+{% endfor %}
+</div>
+
+{% include 'partials/pagination.html' %}
+{% endblock %}

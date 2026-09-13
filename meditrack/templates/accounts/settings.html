@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h3><i class="fa-solid fa-gear text-primary me-2"></i>Settings</h3>
+    <p class="text-muted">Manage your admin profile and account security</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-card h-100">
+            <div class="card-header"><i class="fa-solid fa-user me-2"></i>Admin Profile</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        {{ profile_form.first_name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        {{ profile_form.last_name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        {{ profile_form.email }}
+                    </div>
+                    <button type="submit" name="update_profile" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Save Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-card h-100">
+            <div class="card-header"><i class="fa-solid fa-lock me-2"></i>Change Password</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        {{ password_form.old_password }}
+                        {% if password_form.old_password.errors %}<div class="text-danger small">{{ password_form.old_password.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        {{ password_form.new_password1 }}
+                        {% if password_form.new_password1.errors %}<div class="text-danger small">{{ password_form.new_password1.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        {{ password_form.new_password2 }}
+                        {% if password_form.new_password2.errors %}<div class="text-danger small">{{ password_form.new_password2.errors.0 }}</div>{% endif %}
+                    </div>
+                    <button type="submit" name="change_password" class="btn btn-warning">
+                        <i class="fa-solid fa-key me-1"></i> Change Password
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

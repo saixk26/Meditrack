@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h3><i class="fa-solid fa-pills text-primary me-2"></i>{{ title }}</h3>
+        <p class="text-muted mb-0">Fill in the medicine details below</p>
+    </div>
+    <a href="{% url 'core:medicine_list' %}" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i> Back to List</a>
+</div>
+
+<div class="card shadow-card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{% for error in form.non_field_errors %}{{ error }}<br>{% endfor %}</div>
+            {% endif %}
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Medicine Name *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Medicine Code *</label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-danger small">{{ form.code.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Batch Number *</label>
+                    {{ form.batch_number }}
+                    {% if form.batch_number.errors %}<div class="text-danger small">{{ form.batch_number.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Category</label>
+                    {{ form.category }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Supplier</label>
+                    {{ form.supplier }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Manufacturer *</label>
+                    {{ form.manufacturer }}
+                    {% if form.manufacturer.errors %}<div class="text-danger small">{{ form.manufacturer.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Manufacture Date *</label>
+                    {{ form.manufacture_date }}
+                    {% if form.manufacture_date.errors %}<div class="text-danger small">{{ form.manufacture_date.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Expiry Date *</label>
+                    {{ form.expiry_date }}
+                    {% if form.expiry_date.errors %}<div class="text-danger small">{{ form.expiry_date.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Rack Number</label>
+                    {{ form.rack_number }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    {{ form.status }}
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Purchase Price (₹) *</label>
+                    {{ form.purchase_price }}
+                    {% if form.purchase_price.errors %}<div class="text-danger small">{{ form.purchase_price.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Selling Price (₹) *</label>
+                    {{ form.selling_price }}
+                    {% if form.selling_price.errors %}<div class="text-danger small">{{ form.selling_price.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">GST (%) *</label>
+                    {{ form.gst_percentage }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Quantity *</label>
+                    {{ form.quantity }}
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Minimum Stock Level *</label>
+                    {{ form.minimum_stock }}
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">Medicine Image</label>
+                    {{ form.image }}
+                    <div id="imagePreviewWrapper" class="mt-2">
+                        {% if medicine and medicine.image %}
+                        <img src="{{ medicine.image.url }}" id="imagePreview" class="img-preview">
+                        {% else %}
+                        <img src="" id="imagePreview" class="img-preview d-none">
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-floppy-disk me-1"></i> Save Medicine</button>
+            <a href="{% url 'core:medicine_list' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('id_image')?.addEventListener('change', function (e) {
+    const preview = document.getElementById('imagePreview');
+    const file = e.target.files[0];
+    if (file) {
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove('d-none');
+    }
+});
+</script>
+{% endblock %}

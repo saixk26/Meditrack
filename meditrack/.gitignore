@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+.venv/
+venv/
+env/
+*.log
+media/medicines/*
+!media/medicines/.gitkeep
+staticfiles/
+.DS_Store
+*.egg-info/
+.vscode/

@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}Create Bill{% endblock %}
+{% block page_title %}Create New Bill{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h3><i class="fa-solid fa-cash-register text-primary me-2"></i>Create New Bill</h3>
+        <p class="text-muted mb-0">Search medicines, add them to the cart, and generate the invoice</p>
+    </div>
+    <a href="{% url 'core:bill_list' %}" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i> Back</a>
+</div>
+
+<form method="post" id="billForm">
+    {% csrf_token %}
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-card mb-4">
+                <div class="card-header"><i class="fa-solid fa-magnifying-glass me-2"></i>Search &amp; Add Medicines</div>
+                <div class="card-body">
+                    <div class="position-relative">
+                        <input type="text" id="medicineSearchInput" class="form-control form-control-lg" placeholder="Type medicine name or code...">
+                        <div id="searchResults" class="search-results-dropdown d-none"></div>
+                    </div>
+                    <div class="form-text mt-2"><i class="fa-solid fa-circle-info me-1"></i>Expired medicines cannot be billed. Medicines expiring within 7 days are marked with a warning.</div>
+                </div>
+            </div>
+
+            <div class="card shadow-card">
+                <div class="card-header"><i class="fa-solid fa-cart-shopping me-2"></i>Bill Items</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" id="cartTable">
+                            <thead>
+                                <tr><th>Medicine</th><th>Price</th><th>GST%</th><th style="width:120px;">Qty</th><th>Total</th><th></th></tr>
+                            </thead>
+                            <tbody id="cartTableBody">
+                                <tr id="emptyCartRow"><td colspan="6" class="text-center text-muted py-4">No medicines added yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-card">
+                <div class="card-header"><i class="fa-solid fa-receipt me-2"></i>Bill Summary</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Customer</label>
+                        <select name="customer" class="form-select">
+                            <option value="">Walk-in Customer</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.customer_id}}">{{ customer.name }} - {{ customer.phone }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="upi">UPI</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Status</label>
+                        <select name="payment_status" class="form-select">
+                            <option value="paid">Paid</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Discount (%)</label>
+                        <input type="number" name="discount_percent" id="discountInput" class="form-control" min="0" max="100" step="0.01" value="0">
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2"><span>Subtotal</span><span id="sumSubtotal">₹0.00</span></div>
+                    <div class="d-flex justify-content-between mb-2"><span>GST</span><span id="sumGst">₹0.00</span></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Discount</span><span id="sumDiscount">₹0.00</span></div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3 fs-5 fw-bold"><span>Grand Total</span><span id="sumGrandTotal">₹0.00</span></div>
+                    <button type="submit" class="btn btn-primary w-100 py-2" id="generateBillBtn">
+                        <i class="fa-solid fa-file-invoice me-1"></i> Generate Invoice
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="hiddenInputsWrapper"></div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const searchUrl = "{% url 'core:medicine_search_ajax' %}";
+let cart = {}; // id -> {name, code, price, gst, qty, available, expiryLabel, expiryStatus}
+
+const searchInput = document.getElementById('medicineSearchInput');
+const resultsBox = document.getElementById('searchResults');
+let searchTimeout = null;
+
+searchInput.addEventListener('input', function () {
+    const q = this.value.trim();
+    clearTimeout(searchTimeout);
+    if (q.length < 2) { resultsBox.classList.add('d-none'); resultsBox.innerHTML = ''; return; }
+    searchTimeout = setTimeout(() => {
+        fetch(`${searchUrl}?q=${encodeURIComponent(q)}`)
+            .then(res => res.json())
+            .then(data => renderResults(data.results));
+    }, 250);
+});
+
+function renderResults(results) {
+    if (!results.length) {
+        resultsBox.innerHTML = '<div class="search-result-item text-muted">No medicines found</div>';
+        resultsBox.classList.remove('d-none');
+        return;
+    }
+    resultsBox.innerHTML = results.map(m => {
+        let warning = '';
+        if (m.expiry_status === 'expired') warning = '<span class="badge bg-danger ms-2">Expired</span>';
+        else if (['expiring_today','expiring_tomorrow','expiring_week'].includes(m.expiry_status)) warning = `<span class="badge bg-warning text-dark ms-2">${m.expiry_label}</span>`;
+        const disabled = !m.is_sellable ? 'opacity-50' : '';
+        return `<div class="search-result-item ${disabled}" data-id="${m.medicine_id}" data-name="${m.name}" data-code="${m.code}"
+                    data-price="${m.price}" data-gst="${m.gst}" data-available="${m.quantity_available}"
+                    data-expirystatus="${m.expiry_status}" data-expirylabel="${m.expiry_label}" data-sellable="${m.is_sellable}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div><strong>${m.name}</strong> <span class="text-muted small">(${m.code})</span>${warning}</div>
+                        <div class="text-end small">₹${m.price} • Stock: ${m.quantity_available}</div>
+                    </div>
+                </div>`;
+    }).join('');
+    resultsBox.classList.remove('d-none');
+}
+
+resultsBox.addEventListener('click', function (e) {
+    const item = e.target.closest('.search-result-item');
+    if (!item || !item.dataset.id) return;
+    if (item.dataset.sellable !== 'True' && item.dataset.sellable !== 'true') {
+        showToastMsg('This medicine cannot be billed (expired or out of stock).', 'danger');
+        return;
+    }
+    addToCart(item.dataset);
+    searchInput.value = '';
+    resultsBox.classList.add('d-none');
+});
+
+document.addEventListener('click', function (e) {
+    if (!resultsBox.contains(e.target) && e.target !== searchInput) {
+        resultsBox.classList.add('d-none');
+    }
+});
+
+function addToCart(data) {
+    const id = data.id;
+    if (cart[id]) {
+        if (cart[id].qty < parseInt(data.available)) cart[id].qty += 1;
+    } else {
+        cart[id] = {
+            name: data.name, code: data.code, price: parseFloat(data.price),
+            gst: parseFloat(data.gst), qty: 1, available: parseInt(data.available),
+            expiryLabel: data.expirylabel, expiryStatus: data.expirystatus,
+        };
+    }
+    renderCart();
+}
+
+function renderCart() {
+    const tbody = document.getElementById('cartTableBody');
+    const ids = Object.keys(cart);
+    if (!ids.length) {
+        tbody.innerHTML = '<tr id="emptyCartRow"><td colspan="6" class="text-center text-muted py-4">No medicines added yet.</td></tr>';
+        updateSummary();
+        return;
+    }
+    tbody.innerHTML = ids.map(id => {
+        const item = cart[id];
+        const lineTotal = (item.price * item.qty) * (1 + item.gst / 100);
+        let warnBadge = '';
+        if (['expiring_today','expiring_tomorrow','expiring_week'].includes(item.expiryStatus)) {
+            warnBadge = `<div class="small text-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${item.expiryLabel}</div>`;
+        }
+        return `<tr>
+            <td>${item.name} <span class="text-muted small">(${item.code})</span>${warnBadge}</td>
+            <td>₹${item.price.toFixed(2)}</td>
+            <td>${item.gst}%</td>
+            <td><input type="number" min="1" max="${item.available}" value="${item.qty}" class="form-control form-control-sm cart-qty-input" data-id="${id}"></td>
+            <td>₹${lineTotal.toFixed(2)}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger cart-remove-btn" data-id="${id}"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>`;
+    }).join('');
+    updateSummary();
+}
+
+document.getElementById('cartTableBody').addEventListener('input', function (e) {
+    if (e.target.classList.contains('cart-qty-input')) {
+        const id = e.target.dataset.id;
+        let val = parseInt(e.target.value) || 1;
+        val = Math.min(Math.max(val, 1), cart[id].available);
+        cart[id].qty = val;
+        renderCart();
+    }
+});
+
+document.getElementById('cartTableBody').addEventListener('click', function (e) {
+    const btn = e.target.closest('.cart-remove-btn');
+    if (btn) { delete cart[btn.dataset.id]; renderCart(); }
+});
+
+const discountInput = document.getElementById('discountInput');
+discountInput.addEventListener('input', updateSummary);
+
+function updateSummary() {
+    let subtotal = 0, gstTotal = 0;
+    Object.values(cart).forEach(item => {
+        const lineSub = item.price * item.qty;
+        subtotal += lineSub;
+        gstTotal += lineSub * item.gst / 100;
+    });
+    const discountPct = parseFloat(discountInput.value) || 0;
+    const discountAmt = subtotal * discountPct / 100;
+    const grandTotal = subtotal - discountAmt + gstTotal;
+
+    document.getElementById('sumSubtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('sumGst').textContent = `₹${gstTotal.toFixed(2)}`;
+    document.getElementById('sumDiscount').textContent = `₹${discountAmt.toFixed(2)}`;
+    document.getElementById('sumGrandTotal').textContent = `₹${grandTotal.toFixed(2)}`;
+}
+
+document.getElementById('billForm').addEventListener('submit', function (e) {
+    const ids = Object.keys(cart);
+    if (!ids.length) {
+        e.preventDefault();
+        showToastMsg('Please add at least one medicine to the bill.', 'danger');
+        return;
+    }
+    const wrapper = document.getElementById('hiddenInputsWrapper');
+    wrapper.innerHTML = '';
+    ids.forEach(id => {
+        wrapper.innerHTML += `<input type="hidden" name="medicine_id[]" value="${id}">`;
+        wrapper.innerHTML += `<input type="hidden" name="quantity[]" value="${cart[id].qty}">`;
+    });
+});
+</script>
+{% endblock %}

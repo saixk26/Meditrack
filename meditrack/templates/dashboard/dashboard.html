@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h3>Welcome back, {{ request.user.first_name|default:request.user.username }} 👋</h3>
+        <p class="text-muted mb-0">Here's what's happening in your pharmacy today, {{ today|date:"d M Y" }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'core:medicine_add' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Add Medicine</a>
+        <a href="{% url 'core:bill_create' %}" class="btn btn-outline-primary"><i class="fa-solid fa-file-invoice me-1"></i> New Bill</a>
+    </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card border-start-primary">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h6 class="text-muted mb-1">Total Medicines</h6><h3 class="mb-0">{{ total_medicines }}</h3></div>
+                <div class="stat-icon bg-primary-soft text-primary"><i class="fa-solid fa-pills"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card border-start-info">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h6 class="text-muted mb-1">Total Suppliers</h6><h3 class="mb-0">{{ total_suppliers }}</h3></div>
+                <div class="stat-icon bg-info-soft text-info"><i class="fa-solid fa-truck-field"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card border-start-success">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h6 class="text-muted mb-1">Total Customers</h6><h3 class="mb-0">{{ total_customers }}</h3></div>
+                <div class="stat-icon bg-success-soft text-success"><i class="fa-solid fa-users"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card border-start-warning">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h6 class="text-muted mb-1">Low Stock</h6><h3 class="mb-0">{{ low_stock_count }}</h3></div>
+                <div class="stat-icon bg-warning-soft text-warning"><i class="fa-solid fa-boxes-stacked"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card border-start-danger">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h6 class="text-muted mb-1">Out of Stock</h6><h3 class="mb-0">{{ out_of_stock_count }}</h3></div>
+                <div class="stat-icon bg-danger-soft text-danger"><i class="fa-solid fa-box-open"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card border-start-danger">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h6 class="text-muted mb-1">Expired Medicines</h6><h3 class="mb-0">{{ expired_count }}</h3></div>
+                <div class="stat-icon bg-danger-soft text-danger"><i class="fa-solid fa-skull-crossbones"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card border-start-warning">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h6 class="text-muted mb-1">Expiring Today</h6><h3 class="mb-0">{{ expiring_today_count }}</h3></div>
+                <div class="stat-icon bg-warning-soft text-warning"><i class="fa-solid fa-hourglass-half"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card border-start-info">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h6 class="text-muted mb-1">Expiring Within 7 Days</h6><h3 class="mb-0">{{ expiring_week_count }}</h3></div>
+                <div class="stat-icon bg-info-soft text-info"><i class="fa-solid fa-calendar-days"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card shadow-card">
+            <div class="card-header"><i class="fa-solid fa-bolt me-2"></i>Quick Actions</div>
+            <div class="card-body">
+                <div class="row g-3 text-center">
+                    <div class="col-6 col-md-2">
+                        <a href="{% url 'core:medicine_add' %}" class="quick-action-card">
+                            <i class="fa-solid fa-pills"></i><span>Add Medicine</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="{% url 'core:bill_create' %}" class="quick-action-card">
+                            <i class="fa-solid fa-cash-register"></i><span>New Bill</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="{% url 'core:customer_add' %}" class="quick-action-card">
+                            <i class="fa-solid fa-user-plus"></i><span>Add Customer</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="{% url 'core:supplier_add' %}" class="quick-action-card">
+                            <i class="fa-solid fa-truck"></i><span>Add Supplier</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="{% url 'core:expiry_center' %}" class="quick-action-card">
+                            <i class="fa-solid fa-triangle-exclamation"></i><span>Expiry Alerts</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="{% url 'core:inventory_list' %}" class="quick-action-card">
+                            <i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CHARTS -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-card h-100">
+            <div class="card-header"><i class="fa-solid fa-chart-pie me-2"></i>Stock Overview</div>
+            <div class="card-body"><canvas id="stockChart" height="220"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-card h-100">
+            <div class="card-header"><i class="fa-solid fa-chart-column me-2"></i>Expiry Overview</div>
+            <div class="card-body"><canvas id="expiryChart" height="220"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- RECENT ACTIVITY + RECENT BILLS -->
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-card h-100">
+            <div class="card-header"><i class="fa-solid fa-clock-rotate-left me-2"></i>Recent Activities</div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush activity-list">
+                    {% for activity in recent_activities %}
+                    <li class="list-group-item d-flex align-items-start gap-3">
+                        <i class="fa-solid {{ activity.icon }} mt-1"></i>
+                        <div>
+                            <div>{{ activity.description }}</div>
+                            <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted text-center py-4">No recent activity yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-card h-100">
+            <div class="card-header"><i class="fa-solid fa-receipt me-2"></i>Recent Bills</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead><tr><th>Bill No.</th><th>Customer</th><th>Total</th><th></th></tr></thead>
+                        <tbody>
+                        {% for bill in recent_bills %}
+                            <tr>
+                                <td>{{ bill.bill_number }}</td>
+                                <td>{{ bill.customer.name|default:"Walk-in Customer" }}</td>
+                                <td>{{ bill.grand_total|rupee }}</td>
+                                <td><a href="{% url 'core:bill_invoice' bill.pk %}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-eye"></i></a></td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">No bills generated yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const stockData = {{ stock_chart|safe }};
+const expiryData = {{ expiry_chart|safe }};
+
+new Chart(document.getElementById('stockChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['In Stock', 'Low Stock', 'Out of Stock'],
+        datasets: [{
+            data: [stockData.in_stock, stockData.low_stock, stockData.out_of_stock],
+            backgroundColor: ['#198754', '#ffc107', '#dc3545'],
+            borderWidth: 2,
+        }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } } }
+});
+
+new Chart(document.getElementById('expiryChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Expired', 'Today', 'Within 7d', 'Within 30d', 'Safe'],
+        datasets: [{
+            label: 'Medicines',
+            data: [expiryData.expired, expiryData.today, expiryData.week, expiryData.month, expiryData.safe],
+            backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#0dcaf0', '#198754'],
+        }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+});
+</script>
+{% endblock %}

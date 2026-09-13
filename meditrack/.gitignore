@@ -12,3 +12,5 @@ staticfiles/
 .DS_Store
 *.egg-info/
 .vscode/
+
+db.sql

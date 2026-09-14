@@ -20,6 +20,10 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'https://meditrack-1-kx4h.onrender.com',
+]
 
 # -------------------------------------------------------------------------
 # APPLICATION DEFINITION
